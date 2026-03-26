@@ -1,6 +1,7 @@
 # client.py
 import flwr as fl
 import torch
+import sys
 from collections import OrderedDict
 from model import DiabetesNet
 from utils import load_data
@@ -10,7 +11,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Configuration
 NUM_CLIENTS = 2  # Total number of simulated clients
-CLIENT_ID = int(input("Enter client ID (0 or 1): "))  # Ask user to specify client index
+CLIENT_ID = int(sys.argv[1]) if len(sys.argv) > 1 else 0  # Ask user to specify client index
 
 # Initialize model and data
 model = DiabetesNet().to(DEVICE)
@@ -65,7 +66,7 @@ class DiabetesClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         set_parameters(model, parameters)
-        train(model, trainloader, epochs=1)
+        train(model, trainloader, epochs=3)
         return get_parameters(model), len(trainloader.dataset), {}
 
     def evaluate(self, parameters, config):
@@ -75,4 +76,4 @@ class DiabetesClient(fl.client.NumPyClient):
         return loss, len(testloader.dataset), {"accuracy": accuracy}
 
 # Start the client
-fl.client.start_numpy_client(server_address="127.0.0.1:8080", client=DiabetesClient())
+fl.client.start_numpy_client(server_address="127.0.0.1:8081", client=DiabetesClient())

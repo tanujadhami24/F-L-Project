@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Federated Learning Healthcare Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <h1>🧠 Federated Learning Healthcare System</h1>
+        <p>Diabetes Prediction using Privacy-Preserving AI</p>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+            <h2>Control Panel</h2>
+            <button onclick="startTraining()">🚀 Start Training</button>
+            <p id="status">Status: Idle</p>
+
+            <div class="metrics">
+                <h3>Model Metrics</h3>
+                <p>Accuracy: <span id="accuracy">--</span></p>
+                <p>Precision: <span id="precision">--</span></p>
+                <p>Recall: <span id="recall">--</span></p>
+                <p>F1 Score: <span id="f1">--</span></p>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+            <h2>Training Accuracy Graph</h2>
+            <img src="{{ url_for('static', filename='federated_accuracy_plot.png') }}" 
+                 alt="Accuracy Graph" id="graph">
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>© 2026 Federated Learning Project | Built with ❤️</p>
+    </footer>
+
+    <script>
+        function startTraining() {
+            document.getElementById("status").innerText = "Status: Training Started...";
+
+            fetch('/start')
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("status").innerText = data;
+
+                // Dummy values (later we will connect real data)
+                document.getElementById("accuracy").innerText = "0.64";
+                document.getElementById("precision").innerText = "0.70";
+                document.getElementById("recall").innerText = "0.60";
+                document.getElementById("f1").innerText = "0.64";
+
+                // Refresh graph
+                document.getElementById("graph").src = "{{ url_for('static', filename='federated_accuracy_plot.png') }}?t=" + new Date().getTime();
+            });
+        }
+    </script>
+
+</body>
+</html>

@@ -22,7 +22,7 @@ strategy = fl.server.strategy.FedAvg(
 
 # Train the FL server
 fl.server.start_server(
-    server_address="0.0.0.0:8080",
+    server_address="0.0.0.0:8081",
     config=fl.server.ServerConfig(num_rounds=10),
     strategy=strategy
 )
@@ -35,5 +35,5 @@ plt.xlabel("Round")
 plt.ylabel("Accuracy")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("federated_accuracy_plot.png")  # Save as image (optional)
+plt.savefig("static/federated_accuracy_plot.png")  # Save as image (optional)
 plt.show()
