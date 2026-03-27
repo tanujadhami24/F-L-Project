@@ -1,39 +1,53 @@
-# server.py
 import flwr as fl
 import matplotlib.pyplot as plt
 
-# Store accuracy after each round
 round_accuracies = []
 
-# Custom metric aggregation function
-def weighted_average(metrics):
-    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
-    total_examples = sum(num_examples for num_examples, _ in metrics)
-    round_accuracy = sum(accuracies) / total_examples
 
-    # Store accuracy for plotting later
+def weighted_average(metrics):
+    accuracies = []
+
+    for num_examples, m in metrics:
+        if "accuracy" in m:
+            accuracies.append(num_examples * m["accuracy"])
+
+    total_examples = sum(num_examples for num_examples, _ in metrics)
+
+    if total_examples == 0:
+        return {"accuracy": 0}
+
+    round_accuracy = sum(accuracies) / total_examples
     round_accuracies.append(round_accuracy)
+
+    print(f"Round {len(round_accuracies)} Accuracy: {round_accuracy:.4f}")
+
     return {"accuracy": round_accuracy}
 
-# Define FL strategy with metric aggregation
+
 strategy = fl.server.strategy.FedAvg(
     evaluate_metrics_aggregation_fn=weighted_average
 )
 
-# Train the FL server
+
 fl.server.start_server(
     server_address="0.0.0.0:8081",
     config=fl.server.ServerConfig(num_rounds=10),
-    strategy=strategy
+    strategy=strategy,
 )
 
-# After training finishes, plot the accuracy over rounds
-plt.figure(figsize=(8, 5))
-plt.plot(range(1, len(round_accuracies) + 1), round_accuracies, marker='o', color='blue')
+
+# Plot graph
+plt.figure(figsize=(10, 6))
+
+plt.plot(range(1, len(round_accuracies) + 1), round_accuracies, marker='o')
+
 plt.title("Federated Learning Accuracy over Rounds")
-plt.xlabel("Round")
+plt.xlabel("Rounds")
 plt.ylabel("Accuracy")
 plt.grid(True)
-plt.tight_layout()
-plt.savefig("static/federated_accuracy_plot.png")  # Save as image (optional)
+
+for i, acc in enumerate(round_accuracies):
+    plt.text(i + 1, acc, f"{acc:.2f}", ha='center')
+
+plt.savefig("federated_accuracy_plot.png")
 plt.show()

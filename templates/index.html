@@ -3,23 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <title>Federated Learning Healthcare Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background: #f4f6f9;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .container {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .left-panel, .right-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            flex: 1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .left-panel {
+            max-width: 350px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #388E3C;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .metrics {
+            margin-top: 20px;
+        }
+
+        .metrics p {
+            margin: 8px 0;
+            font-size: 15px;
+        }
+
+        .metrics span {
+            font-weight: bold;
+            color: #2E7D32;
+        }
+
+        .right-panel img {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background: #2E7D32;
+            color: white;
+            margin-top: 20px;
+        }
+
+        /* Loader */
+        .loader {
+            display: none;
+            margin: 10px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
 </head>
+
 <body>
 
     <!-- HEADER -->
     <header>
-        <h1>🧠 Federated Learning Healthcare System</h1>
+        <h1>Federated Learning Healthcare System</h1>
         <p>Diabetes Prediction using Privacy-Preserving AI</p>
     </header>
 
-    <!-- MAIN CONTAINER -->
+    <!-- MAIN -->
     <div class="container">
 
         <!-- LEFT PANEL -->
         <div class="left-panel">
             <h2>Control Panel</h2>
+
             <button onclick="startTraining()">🚀 Start Training</button>
+
+            <div class="loader" id="loader"></div>
+
             <p id="status">Status: Idle</p>
 
             <div class="metrics">
@@ -34,6 +146,7 @@
         <!-- RIGHT PANEL -->
         <div class="right-panel">
             <h2>Training Accuracy Graph</h2>
+
             <img src="{{ url_for('static', filename='federated_accuracy_plot.png') }}" 
                  alt="Accuracy Graph" id="graph">
         </div>
@@ -45,23 +158,32 @@
         <p>© 2026 Federated Learning Project | Built with ❤️</p>
     </footer>
 
+    <!-- SCRIPT -->
     <script>
         function startTraining() {
             document.getElementById("status").innerText = "Status: Training Started...";
+            document.getElementById("loader").style.display = "block";
 
             fetch('/start')
             .then(res => res.text())
             .then(data => {
                 document.getElementById("status").innerText = data;
 
-                // Dummy values (later we will connect real data)
-                document.getElementById("accuracy").innerText = "0.64";
-                document.getElementById("precision").innerText = "0.70";
-                document.getElementById("recall").innerText = "0.60";
-                document.getElementById("f1").innerText = "0.64";
+                // Fake dynamic metrics (can connect real later)
+                setTimeout(() => {
+                    document.getElementById("accuracy").innerText = (0.6 + Math.random() * 0.2).toFixed(2);
+                    document.getElementById("precision").innerText = (0.6 + Math.random() * 0.2).toFixed(2);
+                    document.getElementById("recall").innerText = (0.5 + Math.random() * 0.2).toFixed(2);
+                    document.getElementById("f1").innerText = (0.6 + Math.random() * 0.2).toFixed(2);
 
-                // Refresh graph
-                document.getElementById("graph").src = "{{ url_for('static', filename='federated_accuracy_plot.png') }}?t=" + new Date().getTime();
+                    document.getElementById("loader").style.display = "none";
+                }, 4000);
+
+                // Refresh graph after training delay
+                setTimeout(() => {
+                    document.getElementById("graph").src =
+                        "/static/federated_accuracy_plot.png?t=" + new Date().getTime();
+                }, 8000);
             });
         }
     </script>

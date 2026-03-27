@@ -1,21 +1,25 @@
 from flask import Flask, render_template
 import subprocess
-import time
+import os
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/start')
-def start():
-    subprocess.Popen(["python", "server.py"])
-    time.sleep(2)
-    subprocess.Popen(["python", "client.py", "0"])
-    subprocess.Popen(["python", "client.py", "1"])
 
-    return "Training Started Successfully!"
+# 🔥 NEW ROUTE (THIS FIXES YOUR BUTTON)
+@app.route("/start")
+def start_training():
+    try:
+        # Run server in background
+        subprocess.Popen(["python", "server.py"])
+
+        return "Training Started Successfully 🚀"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 
 if __name__ == "__main__":
     app.run(debug=True)

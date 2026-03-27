@@ -1,79 +1,68 @@
-# client.py
 import flwr as fl
 import torch
-import sys
-from collections import OrderedDict
-from model import DiabetesNet
+import torch.nn as nn
+import torch.optim as optim
+
+from model import DiabetesModel
 from utils import load_data
 
-# Set device (GPU if available)
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Configuration
-NUM_CLIENTS = 2  # Total number of simulated clients
-CLIENT_ID = int(sys.argv[1]) if len(sys.argv) > 1 else 0  # Ask user to specify client index
+class FlowerClient(fl.client.NumPyClient):
+    def __init__(self, cid):
+        self.cid = cid
+        self.model = DiabetesModel()
+        self.trainloader, self.testloader = load_data(cid)
 
-# Initialize model and data
-model = DiabetesNet().to(DEVICE)
-trainloader, testloader = load_data(CLIENT_ID, NUM_CLIENTS)
+        self.criterion = nn.BCELoss()
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
-# Get model parameters as NumPy arrays
-def get_parameters(net):
-    return [val.cpu().numpy() for _, val in net.state_dict().items()]
-
-# Set model parameters from NumPy arrays
-def set_parameters(net, parameters):
-    params_dict = zip(net.state_dict().keys(), parameters)
-    state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-    net.load_state_dict(state_dict, strict=True)
-
-# Local training function
-def train(net, trainloader, epochs=1):
-    net.train()
-    optimizer = torch.optim.SGD(net.parameters(), lr=0.01)
-    loss_fn = torch.nn.BCELoss()  # Binary Cross Entropy Loss
-
-    for _ in range(epochs):
-        for X, y in trainloader:
-            X, y = X.to(DEVICE), y.to(DEVICE)
-            optimizer.zero_grad()
-            output = net(X).view(-1)
-            loss = loss_fn(output, y.view(-1))
-            loss.backward()
-            optimizer.step()
-
-# Evaluation function
-def test(net, testloader):
-    net.eval()
-    correct, total, loss = 0, 0, 0.0
-    loss_fn = torch.nn.BCELoss()
-
-    with torch.no_grad():
-        for X, y in testloader:
-            X, y = X.to(DEVICE), y.to(DEVICE)
-            outputs = net(X).view(-1)
-            preds = outputs > 0.5  # Threshold for binary classification
-            correct += (preds == y.view(-1)).sum().item()
-            loss += loss_fn(outputs, y.view(-1)).item()
-            total += y.size(0)
-
-    return loss / total, correct / total
-
-# Define Flower client class
-class DiabetesClient(fl.client.NumPyClient):
     def get_parameters(self, config):
-        return get_parameters(model)
+        return [val.cpu().numpy() for val in self.model.state_dict().values()]
+
+    def set_parameters(self, parameters):
+        params_dict = zip(self.model.state_dict().keys(), parameters)
+        state_dict = {k: torch.tensor(v) for k, v in params_dict}
+        self.model.load_state_dict(state_dict, strict=True)
 
     def fit(self, parameters, config):
-        set_parameters(model, parameters)
-        train(model, trainloader, epochs=3)
-        return get_parameters(model), len(trainloader.dataset), {}
+        self.set_parameters(parameters)
+
+        self.model.train()
+        for epoch in range(1):  # can increase later
+            for X, y in self.trainloader:
+                self.optimizer.zero_grad()
+                outputs = self.model(X)
+                loss = self.criterion(outputs, y)
+                loss.backward()
+                self.optimizer.step()
+
+        return self.get_parameters(config), len(self.trainloader.dataset), {}
 
     def evaluate(self, parameters, config):
-        set_parameters(model, parameters)
-        loss, accuracy = test(model, testloader)
-        print(f"[Client {CLIENT_ID}] Eval -> Loss: {loss:.4f}, Accuracy: {accuracy:.4f}")
-        return loss, len(testloader.dataset), {"accuracy": accuracy}
+        self.set_parameters(parameters)
 
-# Start the client
-fl.client.start_numpy_client(server_address="127.0.0.1:8081", client=DiabetesClient())
+        self.model.eval()
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for X, y in self.testloader:
+                outputs = self.model(X)
+                preds = (outputs > 0.5).float()
+                correct += (preds == y).sum().item()
+                total += y.size(0)
+
+        accuracy = correct / total
+        return 0.0, len(self.testloader.dataset), {"accuracy": accuracy}
+
+
+def main():
+    client_id = int(input("Enter client ID (0 or 1): "))
+    fl.client.start_numpy_client(
+        server_address="127.0.0.1:8081",
+        client=FlowerClient(client_id),
+    )
+
+
+if __name__ == "__main__":
+    main()
