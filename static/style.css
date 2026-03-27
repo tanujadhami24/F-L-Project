@@ -65,13 +65,61 @@ button:hover {
     font-weight: bold;
 }
 
+/* LOADER */
+.loader {
+    display: none;
+    margin: 15px auto;
+    border: 4px solid #334155;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 /* METRICS */
 .metrics {
     margin-top: 20px;
 }
 
 .metrics p {
-    margin: 5px 0;
+    margin: 6px 0;
+}
+
+.metrics span {
+    font-weight: bold;
+    color: #38bdf8;
+}
+
+/* COMPARISON TABLE */
+.comparison {
+    margin-top: 25px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+table, th, td {
+    border: 1px solid #334155;
+}
+
+th {
+    background: #3b82f6;
+    color: white;
+}
+
+td, th {
+    padding: 10px;
+    text-align: center;
 }
 
 /* RIGHT PANEL */
@@ -98,4 +146,16 @@ footer {
     margin-top: 20px;
     font-size: 14px;
     color: #64748b;
+}
+
+/* RESPONSIVE (basic) */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .left-panel,
+    .right-panel {
+        width: 100%;
+    }
 }
