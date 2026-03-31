@@ -38,20 +38,32 @@ def weighted_average(metrics):
             "f1_score": 0
         }
 
-    # 🔥 Calculate averages
+    # ✅ Calculate averages
     round_accuracy = sum(accuracies) / total_examples
     round_precision = sum(precisions) / total_examples
     round_recall = sum(recalls) / total_examples
     round_f1 = sum(f1s) / total_examples
 
-    # 🔥 Store for graphs
+    # ✅ Store for graph
     round_accuracies.append(round_accuracy)
     round_precisions.append(round_precision)
     round_recalls.append(round_recall)
     round_f1s.append(round_f1)
 
-    print("Round:", len(round_accuracies))
-    print("Accuracy:", round_accuracy)
+    print(f"Round {len(round_accuracies)}")
+    print(f"Accuracy: {round_accuracy:.4f}")
+
+    # 🔥 VERY IMPORTANT: SAVE LIVE RESULTS FOR DASHBOARD
+    live_results = {
+        "accuracy": round_accuracy,
+        "precision": round_precision,
+        "recall": round_recall,
+        "f1_score": round_f1,
+        "training_time": time.time() - start_time
+    }
+
+    with open("federated_results.json", "w") as f:
+        json.dump(live_results, f)
 
     return {
         "accuracy": round_accuracy,
@@ -61,26 +73,26 @@ def weighted_average(metrics):
     }
 
 
-# Strategy
+# 🚀 Strategy
 strategy = fl.server.strategy.FedAvg(
     evaluate_metrics_aggregation_fn=weighted_average
 )
 
 
-# Start server
+# 🚀 Start server
 fl.server.start_server(
     server_address="0.0.0.0:8081",
     config=fl.server.ServerConfig(num_rounds=10),
     strategy=strategy,
 )
 
-# 🔥 Total training time
+# ⏱️ Total training time
 end_time = time.time()
 training_time = end_time - start_time
 
 
 # ===============================
-# 🔥 SAVE FINAL RESULTS (IMPORTANT)
+# ✅ FINAL SAVE (after training)
 # ===============================
 final_results = {
     "accuracy": round_accuracies[-1] if round_accuracies else 0,
@@ -97,11 +109,12 @@ print("Final Federated Results:", final_results)
 
 
 # ===============================
-# 🔥 GRAPH SECTION (YOUR ORIGINAL + UPGRADE)
+# 📈 GRAPH SECTION
 # ===============================
 
 graph_path = "static/federated_accuracy_plot.png"
 
+# Remove old graph
 if os.path.exists(graph_path):
     os.remove(graph_path)
 
@@ -110,20 +123,20 @@ plt.figure(figsize=(10, 6))
 plt.plot(
     range(1, len(round_accuracies) + 1),
     round_accuracies,
-    marker='o',
-    linestyle='-'
+    marker='o'
 )
 
-plt.title("Federated Learning Accuracy over Rounds", fontsize=14)
-plt.xlabel("Rounds", fontsize=12)
-plt.ylabel("Accuracy", fontsize=12)
+plt.title("Federated Learning Accuracy over Rounds")
+plt.xlabel("Rounds")
+plt.ylabel("Accuracy")
 plt.grid(True)
 
-# 🔥 Annotate points
+# Annotate points
 for i, acc in enumerate(round_accuracies):
     plt.text(i + 1, acc, f"{acc:.2f}", ha='center', fontsize=8)
 
 plt.tight_layout()
 plt.savefig(graph_path)
 
-plt.show()
+# ❌ REMOVE THIS (IMPORTANT — avoids blocking)
+# plt.show()

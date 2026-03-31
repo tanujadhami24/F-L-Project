@@ -9,6 +9,9 @@
 
     <!-- External CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- ✅ ADD THIS (Chart.js) JUST BEFORE </head> -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -35,15 +38,17 @@
         <!-- STATUS -->
         <p id="status">Status: Idle</p>
         <p>Privacy Mode: <span id="privacy-status">--</span></p>
+
         <!-- FEDERATED METRICS -->
         <div class="metrics">
             <h3>Federated Model Metrics</h3>
 
-            <p>Accuracy: <span id="f-accuracy">--</span></p>
-            <p>Precision: <span id="f-precision">--</span></p>
-            <p>Recall: <span id="f-recall">--</span></p>
-            <p>F1 Score: <span id="f-f1">--</span></p>
-            <p>Training Time: <span id="f-time">--</span></p>
+            <!-- ✅ FIXED IDs -->
+            <p>Accuracy: <span id="accuracy">--</span></p>
+            <p>Precision: <span id="precision">--</span></p>
+            <p>Recall: <span id="recall">--</span></p>
+            <p>F1 Score: <span id="f1">--</span></p>
+            <p>Training Time: <span id="time">--</span></p>
         </div>
 
         <!-- COMPARISON TABLE -->
@@ -95,11 +100,11 @@
     <div class="right-panel">
         <h2>Training Accuracy Graph</h2>
 
-        <img 
-            src="{{ url_for('static', filename='federated_accuracy_plot.png') }}" 
-            id="graph"
-            alt="Federated Accuracy Graph"
-        >
+        <!-- ❌ REMOVE OLD IMAGE -->
+        <!-- <img src="..." id="graph"> -->
+
+        <!-- ✅ ADD THIS CANVAS -->
+        <canvas id="chart"></canvas>
     </div>
 
 </div>

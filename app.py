@@ -1,12 +1,18 @@
-from flask import Flask, render_template, jsonify
-from client import USE_DP
+from flask import Flask, jsonify, render_template
 import subprocess
 import json
 import os
+from threading import Thread
 
 from centralized_model import run_centralized
+from client import USE_DP
 
 app = Flask(__name__)
+
+# ✅ GLOBAL STATE
+training_status = {"status": "idle"}
+current_accuracy = 0
+current_round = 0
 
 
 # 🏠 HOME ROUTE
@@ -15,26 +21,37 @@ def home():
     return render_template("index.html")
 
 
-# 🚀 START TRAINING
+# 🚀 START TRAINING (NON-BLOCKING)
 @app.route("/start")
 def start_training():
-    try:
-        # Run federated server in background
-        subprocess.Popen(["python", "server.py"])
+    def run_training():
+        global training_status
 
-        return "Training Started Successfully 🚀"
-    except Exception as e:
-        return f"Error: {str(e)}"
+        try:
+            training_status["status"] = "running"
+
+            # Run federated server
+            subprocess.run(["python", "server.py"])
+
+            training_status["status"] = "done"
+
+        except Exception as e:
+            print("ERROR:", e)
+            training_status["status"] = "error"
+
+    Thread(target=run_training).start()
+
+    return jsonify({"message": "Training Started 🚀"})
 
 
 # 📊 GET RESULTS
 @app.route("/results")
 def get_results():
     try:
-        # 🔥 Centralized results
+        # 🔥 Centralized
         centralized = run_centralized()
 
-        # 🔥 Federated results (read from JSON file)
+        # 🔥 Federated (from JSON)
         if os.path.exists("federated_results.json"):
             with open("federated_results.json", "r") as f:
                 federated = json.load(f)
@@ -47,10 +64,22 @@ def get_results():
                 "training_time": 0
             }
 
+        # ✅ RETURN CLEAN DATA FOR DASHBOARD
         return jsonify({
-            "centralized": centralized,
-            "federated": federated,
-            "privacy": "ON" if USE_DP else "OFF"
+            "accuracy": federated.get("accuracy", 0),
+            "precision": federated.get("precision", 0),
+            "recall": federated.get("recall", 0),
+            "f1": federated.get("f1_score", 0),
+            "time": federated.get("training_time", 0),
+
+            "c_accuracy": centralized.get("accuracy", 0),
+            "c_precision": centralized.get("precision", 0),
+            "c_recall": centralized.get("recall", 0),
+            "c_f1": centralized.get("f1_score", 0),
+            "c_time": centralized.get("training_time", 0),
+
+            "status": training_status["status"],
+            "privacy": USE_DP
         })
 
     except Exception as e:

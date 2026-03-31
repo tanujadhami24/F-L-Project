@@ -1,3 +1,4 @@
+/* BODY */
 body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
@@ -132,10 +133,17 @@ td, th {
     text-align: center;
 }
 
-.right-panel img {
-    width: 100%;
+/* ❌ OLD IMAGE REMOVED */
+/* .right-panel img { ... } */
+
+/* ✅ NEW CHART STYLING */
+#chart {
+    width: 100% !important;
+    max-height: 400px;
+    margin-top: 20px;
+    background: #020617;
     border-radius: 10px;
-    margin-top: 10px;
+    padding: 10px;
 }
 
 /* FOOTER */
@@ -148,7 +156,7 @@ footer {
     color: #64748b;
 }
 
-/* RESPONSIVE (basic) */
+/* RESPONSIVE */
 @media (max-width: 768px) {
     .container {
         flex-direction: column;

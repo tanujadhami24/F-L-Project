@@ -1,3 +1,25 @@
+let chart;
+let accuracyData = [];
+let labels = [];
+
+// ✅ INIT CHART
+function initChart() {
+    const ctx = document.getElementById("chart").getContext("2d");
+
+    chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Federated Accuracy",
+                data: accuracyData,
+                borderWidth: 2
+            }]
+        }
+    });
+}
+
+// 🚀 START TRAINING
 async function startTraining() {
     const status = document.getElementById("status");
     const loader = document.getElementById("loader");
@@ -6,71 +28,10 @@ async function startTraining() {
     loader.style.display = "block";
 
     try {
-        await fetch('/start');
+        const res = await fetch('/start');
+        if (!res.ok) throw new Error("Start failed");
 
-        // 🔥 WAIT UNTIL FILE IS READY
-        let data = null;
-
-        let attempts = 0;
-
-        while (attempts < 20) {
-    const res = await fetch('/results');
-    const data = await res.json();
-
-    if (data.status === "done") {
-        break;
-    }
-
-    await new Promise(r => setTimeout(r, 2000));
-    attempts++;
-}
-
-        while (true) {
-            const res = await fetch('/results');
-            data = await res.json();
-
-            if (data.federated && data.federated.accuracy > 0) {
-                break; // ✅ training completed
-            }
-
-            await new Promise(r => setTimeout(r, 2000)); // wait 2 sec
-        }
-
-        // =========================
-        // UPDATE UI
-        // =========================
-
-        // 🔐 Privacy status (NEW LINE)
-        document.getElementById("privacy-status").innerText = data.privacy;
-
-        // Federated metrics
-        document.getElementById("f-accuracy").innerText = data.federated.accuracy.toFixed(2);
-        document.getElementById("f-precision").innerText = data.federated.precision.toFixed(2);
-        document.getElementById("f-recall").innerText = data.federated.recall.toFixed(2);
-        document.getElementById("f-f1").innerText = data.federated.f1_score.toFixed(2);
-        document.getElementById("f-time").innerText = data.federated.training_time.toFixed(2);
-
-        // Centralized metrics
-        document.getElementById("c-acc").innerText = data.centralized.accuracy.toFixed(2);
-        document.getElementById("c-pre").innerText = data.centralized.precision.toFixed(2);
-        document.getElementById("c-rec").innerText = data.centralized.recall.toFixed(2);
-        document.getElementById("c-f1").innerText = data.centralized.f1_score.toFixed(2);
-        document.getElementById("c-time").innerText = data.centralized.training_time.toFixed(2);
-
-        // Table values
-        document.getElementById("f-acc").innerText = data.federated.accuracy.toFixed(2);
-        document.getElementById("f-pre").innerText = data.federated.precision.toFixed(2);
-        document.getElementById("f-rec").innerText = data.federated.recall.toFixed(2);
-        document.getElementById("f-f1-table").innerText = data.federated.f1_score.toFixed(2);
-        document.getElementById("f-time-table").innerText = data.federated.training_time.toFixed(2);
-
-        // Final status
-        status.innerText = "Training Completed ✅";
-        loader.style.display = "none";
-
-        // Refresh graph
-        document.getElementById("graph").src =
-            "/static/federated_accuracy_plot.png?t=" + new Date().getTime();
+        fetchUpdates();
 
     } catch (error) {
         console.error(error);
@@ -78,3 +39,60 @@ async function startTraining() {
         loader.style.display = "none";
     }
 }
+
+// 🔄 FETCH LIVE UPDATES
+function fetchUpdates() {
+    let interval = setInterval(async () => {
+        try {
+            const res = await fetch('/results');
+            const data = await res.json();
+
+            if (!data) return;
+
+            // 🔐 Privacy
+            document.getElementById("privacy-status").innerText = data.privacy;
+
+            // ✅ Federated metrics
+            document.getElementById("accuracy").innerText = data.accuracy.toFixed(3);
+            document.getElementById("precision").innerText = data.precision.toFixed(3);
+            document.getElementById("recall").innerText = data.recall.toFixed(3);
+            document.getElementById("f1").innerText = data.f1.toFixed(3);
+            document.getElementById("time").innerText = data.time.toFixed(2);
+
+            // ✅ Centralized metrics
+            document.getElementById("c-acc").innerText = data.c_accuracy.toFixed(3);
+            document.getElementById("c-pre").innerText = data.c_precision.toFixed(3);
+            document.getElementById("c-rec").innerText = data.c_recall.toFixed(3);
+            document.getElementById("c-f1").innerText = data.c_f1.toFixed(3);
+            document.getElementById("c-time").innerText = data.c_time.toFixed(2);
+
+            // ✅ Table update
+            document.getElementById("f-acc").innerText = data.accuracy.toFixed(3);
+            document.getElementById("f-pre").innerText = data.precision.toFixed(3);
+            document.getElementById("f-rec").innerText = data.recall.toFixed(3);
+            document.getElementById("f-f1-table").innerText = data.f1.toFixed(3);
+            document.getElementById("f-time-table").innerText = data.time.toFixed(2);
+
+            // 📈 Graph update
+            labels.push(labels.length + 1);
+            accuracyData.push(data.accuracy);
+            chart.update();
+
+            // ✅ Stop when done
+            if (data.status === "done") {
+                clearInterval(interval);
+                document.getElementById("status").innerText = "Training Completed ✅";
+                document.getElementById("loader").style.display = "none";
+            }
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById("status").innerText = "Error occurred ❌";
+            document.getElementById("loader").style.display = "none";
+        }
+
+    }, 2000);
+}
+
+// INIT
+initChart();
